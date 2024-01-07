@@ -3,25 +3,20 @@ import threading
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from my_starlette.staticfiles import StaticFiles
-from pydantic import BaseModel
 
 import logging
 
-import udp_receive
-
-udp_port = 8266
-esp_nodes = {}
-
-class Node(BaseModel):
-    ip: str
-    name: str
-    unit_no: int
+from udp_receive import Node, udp_receive
 
 log = logging.getLogger("main_py")
 log.setLevel(logging.DEBUG)
 
+
+udp_port = 8266
+esp_nodes = {}
+
 def receive_call():
-    udp_receive.udp_receive(udp_port, esp_nodes)
+    udp_receive(udp_port, esp_nodes)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,9 +25,17 @@ async def lifespan(app: FastAPI):
     log.debug("Startup event end")
     yield
 
-app = FastAPI(lifespan=lifespan)
+openapi_tags = [
+    {
+        "name": "nodes",
+        "description": "List of ESPEasy nodes",
+    },
+]
 
-@app.get("/api/nodes")
+
+app = FastAPI(lifespan=lifespan, openapi_tags=openapi_tags)
+
+@app.get("/api/nodes", tags=["nodes"])
 async def read_nodes() -> list[Node]:
     return [v for (_, v) in esp_nodes.items()]
 

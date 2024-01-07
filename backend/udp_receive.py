@@ -1,6 +1,13 @@
+from pydantic import BaseModel
 import socket
 import logging
- 
+
+
+class Node(BaseModel):
+    ip: str
+    name: str
+    unit_no: int
+
 def udp_receive(UDP_PORT = 8266, esp_nodes = {}):
     UDP_IP = "0.0.0.0"
     log = logging.getLogger("udp_receive")
