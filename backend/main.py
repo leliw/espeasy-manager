@@ -3,14 +3,14 @@ import threading
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from my_starlette.staticfiles import StaticFiles
+from ESPEasy.Model import NodeHeader
 
 import logging
 
-from udp_receive import Node, udp_receive
+from udp_receive import udp_receive
 
 log = logging.getLogger("main_py")
-log.setLevel(logging.DEBUG)
-
+log.setLevel(logging.INFO)
 
 udp_port = 8266
 esp_nodes = {}
@@ -36,7 +36,7 @@ openapi_tags = [
 app = FastAPI(lifespan=lifespan, openapi_tags=openapi_tags)
 
 @app.get("/api/nodes", tags=["nodes"])
-async def read_nodes() -> list[Node]:
+async def read_nodes() -> list[NodeHeader]:
     return [v for (_, v) in esp_nodes.items()]
 
 # Angular static files
