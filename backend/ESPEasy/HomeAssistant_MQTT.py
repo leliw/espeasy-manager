@@ -6,6 +6,7 @@ from unidecode import unidecode
 class DiscoveryMessage(BaseModel):
     name: str
     unique_id: str = None
+    icon: str = None
     device_class: str
     state_topic: str
     unit_of_measurement: str = None
@@ -19,8 +20,8 @@ class DiscoveryMessage(BaseModel):
 mqtt_client = mqtt.Client()
 mqtt_client.connect("192.168.0.2", 1883, 60)
 
-def send_discovery_message(msg: DiscoveryMessage):
+def send_discovery_message(type: str, msg: DiscoveryMessage):
     names = msg.state_topic.split("/")
     msg.unit_of_measurement = "°C"
-    discovery_topic = unidecode("homeassistant/sensor/" + names[0] + "/" + names[1] + "/config")
-    mqtt_client.publish(discovery_topic, msg.model_dump_json(), qos=0, retain=True) 
+    discovery_topic = unidecode("homeassistant/" + type + "/" + names[0] + "/" + names[1] + "/config")
+    mqtt_client.publish(discovery_topic, msg.model_dump_json(exclude_none=True), qos=0, retain=True) 
