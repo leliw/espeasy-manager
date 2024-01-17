@@ -16,6 +16,12 @@ def set_udp_port(port: int):
 def get_nodes():
     return [v for (_, v) in __esp_nodes.items()]
 
+def save_node(node_info: NodeInfo):
+    json = node_info.model_dump_json(exclude_none=True)
+    file = "data/" + node_info.System.Unit_Name + ".json"
+    with open(file, 'tw', encoding="UTF-8") as outfile:
+        outfile.write(json)
+
 def udp_receive():
     UDP_IP = "0.0.0.0"
     log = logging.getLogger("udp_receive")
@@ -38,23 +44,24 @@ def udp_receive():
             else:
                 __esp_nodes[ip] = { "ip": ip, "name": name, "unit_no": unit_no, "last_seen": datetime.datetime.now() }
                 node_info = get_node_info(ip, name, unit_no)
+                save_node(node_info)
                 if unit_no == 31 or unit_no == 33:
                     send_node_info(node_info)
 
 
 def get_node_info(ip, name, unit_no) -> NodeInfo:
     req = requests.get("http://" + ip + "/json")
-    return req.json()
+    return NodeInfo.model_validate(req.json())
 
 
 def send_node_info(node_info: NodeInfo):
     log = logging.getLogger("send_node_info")
     log.setLevel(logging.DEBUG)
-    node_name = node_info["System"]["Unit Name"]
-    for sensor in node_info["Sensors"]:
-        if sensor["TaskEnabled"]=="true":
-            log.debug(" {%d} : %s - %s", sensor["TaskNumber"], sensor["TaskName"], sensor["Type"])
-            type, msg = create_discovery_message(node_name, sensor["TaskName"], sensor["TaskNumber"], sensor["TaskValues"][0]["Name"], sensor["Type"])
+    node_name = node_info.System.Unit_Name
+    for sensor in node_info.Sensors:
+        if sensor.TaskEnabled=="true":
+            log.debug(" {%d} : %s - %s", sensor.TaskNumber, sensor.TaskName, sensor.Type)
+            type, msg = create_discovery_message(node_name, sensor.TaskName, sensor.TaskNumber, sensor.TaskValues[0].Name, sensor.Type)
             if msg:
                 log.debug("Sending discovery message: %s", msg.model_dump_json(exclude_none=True))
                 send_discovery_message(type, msg)
