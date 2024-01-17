@@ -16,6 +16,13 @@ def set_udp_port(port: int):
 def get_nodes():
     return [v for (_, v) in __esp_nodes.items()]
 
+def get_node(ip: str) -> NodeInfo:
+    if ip in __esp_nodes:
+        node = __esp_nodes[ip]
+        return get_node_info(node["ip"], node["name"], node["unit_no"])
+    else:
+        return None
+
 def save_node(node_info: NodeInfo):
     json = node_info.model_dump_json(exclude_none=True)
     file = "data/" + node_info.System.Unit_Name + ".json"

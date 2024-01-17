@@ -1,0 +1,4 @@
+<ul>
+    <li *ngFor="let node of nodes">
+        <a href="http://{{node.ip}}/" target="_blank">{{node.ip}}</a> - <a routerLink="/nodes/{{node.ip}}">{{node.name}}</a></li>
+</ul>

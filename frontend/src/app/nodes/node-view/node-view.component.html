@@ -1,0 +1,8 @@
+<!-- <pre>{{node | json }}</pre> -->
+<ul *ngIf="node">
+    <li *ngFor="let s of node.Sensors">{{s.TaskNumber}} - {{s.TaskName}} - {{s.TaskEnabled}} - {{s.Type}}
+    </li>
+</ul>
+
+
+

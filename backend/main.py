@@ -30,5 +30,9 @@ app = FastAPI(lifespan=lifespan, openapi_tags=openapi_tags)
 async def read_nodes() -> list[ESPEasy.NodeHeader]:
     return ESPEasy.get_nodes()
 
+@app.get("/api/nodes/{ip}", tags=["nodes"])
+async def read_node(ip: str) -> Union[ESPEasy.NodeInfo, None]:
+    return ESPEasy.get_node(ip)
+
 # Angular static files
 app.mount("/", StaticFiles(directory="static/browser", html = True), name="static")
