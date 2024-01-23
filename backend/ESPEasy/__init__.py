@@ -1,19 +1,22 @@
-from pydantic import BaseModel
+"""ESPEasy - A Python library to communicate with ESPEasy devices"""
 import socket
 import datetime
-import requests
 import logging
-from  ESPEasy.Model import NodeHeader, NodeInfo
+import requests
+from pydantic import BaseModel
+from ESPEasy.Model import NodeHeader, NodeInfo
 from ESPEasy.HomeAssistant_MQTT import DiscoveryMessage, send_discovery_message
 
 # Port to listen for UDP packets 8266 is the default port for ESPEasy or 65500 (old one)
 __udp_port = 8266
+#__udp_port = 65500
 __esp_nodes = {}
 
 def set_udp_port(port: int):
     __udp_port = port
 
 def get_nodes():
+    """Returns a list of all nodes"""
     return [v for (_, v) in __esp_nodes.items()]
 
 def get_node(ip: str) -> NodeInfo:
@@ -37,7 +40,7 @@ def udp_receive():
                         socket.SOCK_DGRAM) # UDP
     sock.bind((UDP_IP, __udp_port))
     while True:
-        data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+        data, _ = sock.recvfrom(1024) # buffer size is 1024 bytes
         # print("received message: %s" % data)
         # print(data[0:2])
         # print(data[2:8])
@@ -57,7 +60,7 @@ def udp_receive():
 
 
 def get_node_info(ip, name, unit_no) -> NodeInfo:
-    req = requests.get("http://" + ip + "/json")
+    req = requests.get("http://" + ip + "/json", timeout=5)
     return NodeInfo.model_validate(req.json())
 
 
@@ -81,7 +84,7 @@ def create_discovery_message(node_name: str, task_name: str, task_number: int, v
     if type == "Environment - DS18b20":
         msg = DiscoveryMessage(name=name, device_class="temperature", unique_id=unique_id, state_topic=state_topic)
         msg.unit_of_measurement = "°C"
-        return ('sensor', msg) 
+        return ('sensor', msg)
     elif value_name == "State":
         msg = DiscoveryMessage(name=name, device_class="switch", unique_id=unique_id, state_topic=state_topic)
         msg.icon = "mdi:light-switch"
@@ -93,4 +96,4 @@ def create_discovery_message(node_name: str, task_name: str, task_number: int, v
         msg.state_off = "0"
         return ('switch', msg)
     else:
-         return (None, None)
+        return (None, None)
