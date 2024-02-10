@@ -2,6 +2,7 @@
 import socket
 import datetime
 import logging
+import os
 import requests
 from pydantic import BaseModel
 from ESPEasy.Model import NodeHeader, NodeInfo
@@ -28,6 +29,7 @@ def get_node(ip: str) -> NodeInfo:
 
 def save_node(node_info: NodeInfo):
     json = node_info.model_dump_json(exclude_none=True)
+    os.makedirs("data", exist_ok=True)
     file = "data/" + node_info.System.Unit_Name + ".json"
     with open(file, 'tw', encoding="UTF-8") as outfile:
         outfile.write(json)
