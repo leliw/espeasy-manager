@@ -3,7 +3,8 @@ from typing import Union
 import logging
 import threading
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Path, Request
+from fastapi.responses import HTMLResponse
 from my_starlette.staticfiles import StaticFiles
 import ESPEasy
 
@@ -40,3 +41,11 @@ async def read_node(ip: str) -> Union[ESPEasy.NodeInfo, None]:
 
 # Angular static files
 app.mount("/", StaticFiles(directory="static/browser", html = True), name="static")
+
+@app.get("/{full_path:path}", response_class=HTMLResponse)
+async def catch_all(request: Request, full_path: str):
+    """Catch all for Angular routing"""
+    index_path = Path("static/browser") / 'index.html'
+    if not index_path.exists():
+        raise HTTPException(status_code=404, detail="Page not found")
+    return HTMLResponse(content=index_path.read_text(), status_code=200)
