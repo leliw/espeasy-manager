@@ -1,14 +1,15 @@
 """ESPEasy REST API"""
+import os
 from typing import Union
 import logging
 import threading
+from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Path, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from my_starlette.staticfiles import StaticFiles
 import ESPEasy
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("main_py")
 log.setLevel(logging.INFO)
 
@@ -40,12 +41,26 @@ async def read_node(ip: str) -> Union[ESPEasy.NodeInfo, None]:
     return ESPEasy.get_node(ip)
 
 # Angular static files
-app.mount("/", StaticFiles(directory="static/browser", html = True), name="static")
-
 @app.get("/{full_path:path}", response_class=HTMLResponse)
 async def catch_all(request: Request, full_path: str):
     """Catch all for Angular routing"""
+    log.info("catch_all: %s", full_path)
+    request_path = Path("static/browser") / full_path
+    print(request_path)
+    if request_path.exists() and request_path.is_file():
+        file_extension = os.path.splitext(request_path)[1]
+        match file_extension:
+            case ".js":
+                media_type = "text/javascript"
+            case ".css":
+                media_type = "text/css"
+            case ".ico":
+                media_type = "image/x-icon"
+            case _:
+                media_type = "text/html"
+        return HTMLResponse(content=request_path.read_text(), status_code=200, headers={"Content-Type": media_type})
     index_path = Path("static/browser") / 'index.html'
+    print(index_path)
     if not index_path.exists():
         raise HTTPException(status_code=404, detail="Page not found")
     return HTMLResponse(content=index_path.read_text(), status_code=200)
