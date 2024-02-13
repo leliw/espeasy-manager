@@ -1,13 +1,12 @@
 """ESPEasy REST API"""
-import os
 from typing import Union
 import logging
 import threading
-from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 import ESPEasy
+from static_file_response import static_file_response
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("main_py")
@@ -44,22 +43,4 @@ async def read_node(ip: str) -> Union[ESPEasy.NodeInfo, None]:
 @app.get("/{full_path:path}", response_class=HTMLResponse)
 async def catch_all(_: Request, full_path: str):
     """Catch all for Angular routing"""
-    request_path = Path("static/browser") / full_path
-    if request_path.exists() and request_path.is_file():
-        file_extension = os.path.splitext(request_path)[1]
-        match file_extension:
-            case ".js":
-                media_type = "text/javascript"
-            case ".css":
-                media_type = "text/css"
-            case ".ico":
-                media_type = "image/x-icon"
-            case _:
-                media_type = "text/html"
-        return HTMLResponse(content=request_path.read_text(), 
-                            status_code=200, 
-                            headers={"Content-Type": media_type})
-    index_path = Path("static/browser") / 'index.html'
-    if not index_path.exists():
-        raise HTTPException(status_code=404, detail="Page not found")
-    return HTMLResponse(content=index_path.read_text(), status_code=200)
+    return static_file_response("static/browser", full_path)
