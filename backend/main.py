@@ -14,7 +14,7 @@ log = logging.getLogger("main_py")
 log.setLevel(logging.INFO)
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     """Startup event"""
     log.debug("Startup event")
     threading.Thread(target=ESPEasy.udp_receive, daemon=True).start()
@@ -42,11 +42,9 @@ async def read_node(ip: str) -> Union[ESPEasy.NodeInfo, None]:
 
 # Angular static files
 @app.get("/{full_path:path}", response_class=HTMLResponse)
-async def catch_all(request: Request, full_path: str):
+async def catch_all(_: Request, full_path: str):
     """Catch all for Angular routing"""
-    log.info("catch_all: %s", full_path)
     request_path = Path("static/browser") / full_path
-    print(request_path)
     if request_path.exists() and request_path.is_file():
         file_extension = os.path.splitext(request_path)[1]
         match file_extension:
@@ -58,9 +56,10 @@ async def catch_all(request: Request, full_path: str):
                 media_type = "image/x-icon"
             case _:
                 media_type = "text/html"
-        return HTMLResponse(content=request_path.read_text(), status_code=200, headers={"Content-Type": media_type})
+        return HTMLResponse(content=request_path.read_text(), 
+                            status_code=200, 
+                            headers={"Content-Type": media_type})
     index_path = Path("static/browser") / 'index.html'
-    print(index_path)
     if not index_path.exists():
         raise HTTPException(status_code=404, detail="Page not found")
     return HTMLResponse(content=index_path.read_text(), status_code=200)

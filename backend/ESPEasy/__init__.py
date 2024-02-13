@@ -79,11 +79,11 @@ def send_node_info(node_info: NodeInfo):
                 send_discovery_message(type, msg)
 
 
-def create_discovery_message(node_name: str, task_name: str, task_number: int, value_name: str, type: str) -> (str, DiscoveryMessage):
+def create_discovery_message(node_name: str, task_name: str, task_number: int, value_name: str, device_type: str) -> tuple[str, DiscoveryMessage]:
     unique_id = node_name + "_" + task_name + "_" + value_name
     state_topic = node_name + "/" + task_name + "/" + value_name
     name = node_name.replace("_", " ") + " - " + task_name.replace("_", " ")
-    if type == "Environment - DS18b20":
+    if device_type == "Environment - DS18b20":
         msg = DiscoveryMessage(name=name, device_class="temperature", unique_id=unique_id, state_topic=state_topic)
         msg.unit_of_measurement = "°C"
         return ('sensor', msg)
