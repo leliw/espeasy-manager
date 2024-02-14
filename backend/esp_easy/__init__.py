@@ -5,8 +5,8 @@ import logging
 import os
 import requests
 from pydantic import BaseModel
-from ESPEasy.Model import NodeHeader, NodeInfo
-from ESPEasy.HomeAssistant_MQTT import DiscoveryMessage, send_discovery_message
+from esp_easy.Model import NodeHeader, NodeInfo
+from esp_easy.home_assistant_mqtt import DiscoveryMessage, send_discovery_message
 
 # Port to listen for UDP packets 8266 is the default port for ESPEasy or 65500 (old one)
 __udp_port = 8266
