@@ -1,19 +1,20 @@
+"""ESP Easy data structure based on JSON format."""
 from __future__ import annotations
-
 from typing import List, Optional
-
-from pydantic import BaseModel, Field
 import datetime
+from pydantic import BaseModel, Field
 
 # ESPEasy data structure based on JSON format
 
 class NodeHeader(BaseModel):
+    """Node header information."""
     ip: str
     name: str
     unit_no: int
     last_seen: datetime.datetime
 
 class System(BaseModel):
+    """"ESP Easy node system information."""
     Load: float
     Load_LC: int = Field(..., alias='Load LC')
     Build: int
@@ -51,6 +52,7 @@ class System(BaseModel):
 
 
 class WiFi(BaseModel):
+    """ESP Easy node WiFi information."""
     Hostname: str
     IP_Config: str = Field(..., alias='IP Config')
     IP_Address: str = Field(..., alias='IP Address')
@@ -87,6 +89,7 @@ class WiFi(BaseModel):
 
 
 class Node(BaseModel):
+    """Node information received by one ESP Easy node from other nodes."""
     nr: int
     name: str
     build: int
@@ -96,6 +99,7 @@ class Node(BaseModel):
 
 
 class TaskValue(BaseModel):
+    """ESP Easy node sensor task value information."""
     ValueNumber: int
     Name: str
     NrDecimals: int
@@ -103,12 +107,14 @@ class TaskValue(BaseModel):
 
 
 class DataAcquisitionItem(BaseModel):
+    """ESP Easy node sensor controller (data acquisition) item information."""
     Controller: int
     IDX: int
     Enabled: str
 
 
 class Sensor(BaseModel):
+    """ESP Easy node sensor information."""
     TaskValues: List[TaskValue]
     DataAcquisition: List[DataAcquisitionItem]
     TaskInterval: int
@@ -123,6 +129,7 @@ class Sensor(BaseModel):
 
 
 class NodeInfo(BaseModel):
+    """ESP Easy node information."""
     System: System
     WiFi: WiFi
     nodes: List[Node]
