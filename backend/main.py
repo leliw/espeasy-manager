@@ -12,11 +12,13 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("main_py")
 log.setLevel(logging.INFO)
 
+esp_receiver = esp_easy.UdpReceiver()
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Startup event"""
     log.debug("Startup event")
-    threading.Thread(target=esp_easy.udp_receive, daemon=True).start()
+    threading.Thread(target=esp_receiver.receive_forever, daemon=True).start()
     log.debug("Startup event end")
     yield
 
@@ -32,12 +34,12 @@ app = FastAPI(lifespan=lifespan, openapi_tags=openapi_tags)
 @app.get("/api/nodes", tags=["nodes"])
 async def read_nodes() -> list[esp_easy.NodeHeader]:
     """Returns a list of all nodes"""
-    return esp_easy.get_nodes()
+    return esp_receiver.get_nodes()
 
 @app.get("/api/nodes/{ip}", tags=["nodes"])
 async def read_node(ip: str) -> Union[esp_easy.NodeInfo, None]:
     """Returns a node by ip"""
-    return esp_easy.get_node(ip)
+    return esp_receiver.get_node(ip)
 
 # Angular static files
 @app.get("/{full_path:path}", response_class=HTMLResponse)
