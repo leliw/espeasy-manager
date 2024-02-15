@@ -3,41 +3,28 @@ import socket
 import datetime
 import logging
 import os
+import threading
 import requests
 from .home_assistant_mqtt import DiscoveryMessage, send_discovery_message
 from .model import NodeHeader, NodeInfo
 
-class UdpReceiver:
-    """This class listens for UDP packets from ESPEasy devices."""
-    # Port to listen for UDP packets 8266 is the default port for ESPEasy or 65500 (old one)
-    def __init__(self, port: int = 8266):
-        self._log = logging.getLogger(__name__)
-        self._udp_port = port
+class NodeManager:
+    """This class manages the list of ESPEasy nodes."""
+    def __init__(self):
         self._esp_nodes = {}
+        self._esp_receiver = UdpReceiver(self)
+        threading.Thread(target=self._esp_receiver.receive_forever, daemon=True).start()
 
-    def receive_forever(self):
-        """Listen for UDP packets from ESPEasy devices."""
-        sock = socket.socket(socket.AF_INET, # Internet
-                            socket.SOCK_DGRAM) # UDP
-        sock.bind(("0.0.0.0", self._udp_port))
-        while True:
-            data, _ = sock.recvfrom(1024) # buffer size is 1024 bytes
-            # print("received message: %s" % data)
-            # print(data[0:2])
-            # print(data[2:8])
-            if data[0:2] == b'\xff\x01':
-                ip = str(int.from_bytes(data[8:9])) + "." + str(int.from_bytes(data[9:10])) + "." + str(int.from_bytes(data[10:11])) + "." + str(int.from_bytes(data[11:12]))
-                name = data[15:40].split(b'\00')[0].decode("ascii", errors='ignore')
-                unit_no = int.from_bytes(data[12:13])
-                self._log.debug("%s -> %s - %d, %d, %d", ip, name, unit_no, int.from_bytes(data[13:15]), int.from_bytes(data[40:41]))
-                if ip in self._esp_nodes:
-                    self._esp_nodes[ip]["last_seen"] = datetime.datetime.now()
-                else:
-                    self._esp_nodes[ip] = { "ip": ip, "name": name, "unit_no": unit_no, "last_seen": datetime.datetime.now() }
-                    node_info = get_node_info(ip)
-                    save_node(node_info)
-                    if unit_no == 31 or unit_no == 33:
-                        send_node_info(node_info)
+    def received_node(self, ip: str, name: str, unit_no: int):
+        """Add a node to the list of nodes"""
+        if ip in self._esp_nodes:
+            self._esp_nodes[ip]["last_seen"] = datetime.datetime.now()
+        else:
+            self._esp_nodes[ip] = { "ip": ip, "name": name, "unit_no": unit_no, "last_seen": datetime.datetime.now() }
+            node_info = get_node_info(ip)
+            save_node(node_info)
+            if unit_no in [31, 33, 61]:
+                send_node_info(node_info)
 
     def get_nodes(self) -> list[NodeInfo]:
         """Returns a list of all nodes"""
@@ -50,6 +37,27 @@ class UdpReceiver:
             return get_node_info(node["ip"])
         else:
             return None
+
+class UdpReceiver:
+    """This class listens for UDP packets from ESPEasy devices."""
+    # Port to listen for UDP packets 8266 is the default port for ESPEasy or 65500 (old one)
+    def __init__(self, node_manager: NodeManager, port: int = 8266):
+        self._log = logging.getLogger(__name__)
+        self._udp_port = port
+        self._node_manager = node_manager
+
+    def receive_forever(self):
+        """Listen for UDP packets from ESPEasy devices."""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
+        sock.bind(("0.0.0.0", self._udp_port))
+        while True:
+            data, _ = sock.recvfrom(1024) # buffer size is 1024 bytes
+            if data[0:2] == b'\xff\x01':
+                ip = str(int.from_bytes(data[8:9])) + "." + str(int.from_bytes(data[9:10])) + "." + str(int.from_bytes(data[10:11])) + "." + str(int.from_bytes(data[11:12]))
+                name = data[15:40].split(b'\00')[0].decode("ascii", errors='ignore')
+                unit_no = int.from_bytes(data[12:13])
+                self._log.debug("%s -> %s - %d, %d, %d", ip, name, unit_no, int.from_bytes(data[13:15]), int.from_bytes(data[40:41]))
+                self._node_manager.received_node(ip, name, unit_no)
 
 def save_node(node_info: NodeInfo):
     """Save the node info to a file."""
