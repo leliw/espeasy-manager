@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.concurrency import asynccontextmanager
 
 from config import ServerConfig
+from features.esp_easy import NodeManager
 
 load_dotenv()
 
@@ -12,6 +13,7 @@ load_dotenv()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.config = ServerConfig()
+    app.state.esp_manager = NodeManager()
     yield
 
 
@@ -22,8 +24,15 @@ def get_app(request: Request) -> FastAPI:
 AppDep = Annotated[FastAPI, Depends(get_app)]
 
 
-def get_server_config(app: FastAPI = Depends(get_app)) -> ServerConfig:
+def get_server_config(app: AppDep) -> ServerConfig:
     return app.state.config
 
 
 ServerConfigDep = Annotated[ServerConfig, Depends(get_server_config)]
+
+
+def get_esp_manager(app: AppDep):
+    return app.state.esp_manager
+
+
+NodeManagerDep = Annotated[NodeManager, Depends(get_esp_manager)]
