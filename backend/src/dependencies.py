@@ -5,15 +5,17 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.concurrency import asynccontextmanager
 
 from config import ServerConfig
-from features.esp_easy import NodeManager
+from features.esp_easy import NodeManager, HomeAssistantMqtt
 
 load_dotenv()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.config = ServerConfig()
-    app.state.esp_manager = NodeManager()
+    config = ServerConfig()
+    app.state.config = config
+    mqtt = HomeAssistantMqtt(config.mqtt_host, config.mqtt_port)
+    app.state.esp_manager = NodeManager(mqtt)
     yield
 
 

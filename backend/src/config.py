@@ -7,6 +7,9 @@ class ServerConfig(BaseSettings):
 
     version: str = "0.0.1"
 
+    mqtt_host: str = "192.168.0.2"
+    mqtt_port: int = 1883
+
 
 class ClientConfig(BaseModel):
     version: str

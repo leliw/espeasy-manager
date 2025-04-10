@@ -1,4 +1,5 @@
 """This module manages the list of ESPEasy nodes."""
+
 import datetime
 import logging
 import os
@@ -6,12 +7,15 @@ import threading
 import requests
 
 from .udp_receiver import NodeReceiver, UdpReceiver
-from .home_assistant_mqtt import DiscoveryMessage, send_discovery_message
+from .home_assistant_mqtt import DiscoveryMessage, HomeAssistantMqtt
 from .model import NodeInfo
+
 
 class NodeManager(NodeReceiver):
     """This class manages the list of ESPEasy nodes."""
-    def __init__(self):
+
+    def __init__(self, mqtt: HomeAssistantMqtt):
+        self.mqtt = mqtt
         self._esp_nodes = {}
         self._esp_receiver = UdpReceiver(self)
         threading.Thread(target=self._esp_receiver.receive_forever, daemon=True).start()
@@ -21,8 +25,12 @@ class NodeManager(NodeReceiver):
         if ip in self._esp_nodes:
             self._esp_nodes[ip]["last_seen"] = datetime.datetime.now()
         else:
-            self._esp_nodes[ip] = { "ip": ip, "name": name, "unit_no": unit_no,
-                                   "last_seen": datetime.datetime.now() }
+            self._esp_nodes[ip] = {
+                "ip": ip,
+                "name": name,
+                "unit_no": unit_no,
+                "last_seen": datetime.datetime.now(),
+            }
             node_info = self.get_node_info(ip)
             self.save_node(node_info)
             if unit_no in [31, 33, 61]:
@@ -50,7 +58,7 @@ class NodeManager(NodeReceiver):
         json = node_info.model_dump_json(exclude_none=True)
         os.makedirs("data", exist_ok=True)
         file = "data/" + node_info.System.Unit_Name + ".json"
-        with open(file, 'tw', encoding="UTF-8") as outfile:
+        with open(file, "tw", encoding="UTF-8") as outfile:
             outfile.write(json)
 
     def send_node_info(self, node_info: NodeInfo):
@@ -59,30 +67,52 @@ class NodeManager(NodeReceiver):
         log.setLevel(logging.DEBUG)
         node_name = node_info.System.Unit_Name
         for sensor in node_info.Sensors:
-            if sensor.TaskEnabled=="true":
-                log.debug(" {%d} : %s - %s", sensor.TaskNumber, sensor.TaskName, sensor.Type)
+            if sensor.TaskEnabled == "true":
+                log.debug(
+                    " {%d} : %s - %s", sensor.TaskNumber, sensor.TaskName, sensor.Type
+                )
                 entity_type, msg = self.create_discovery_message(
-                    node_name, sensor.TaskName, sensor.TaskNumber,
-                    sensor.TaskValues[0].Name, sensor.Type)
+                    node_name,
+                    sensor.TaskName,
+                    sensor.TaskNumber,
+                    sensor.TaskValues[0].Name,
+                    sensor.Type,
+                )
                 if msg:
-                    log.debug("Sending discovery message: %s",
-                              msg.model_dump_json(exclude_none=True))
-                    send_discovery_message(entity_type, msg)
+                    log.debug(
+                        "Sending discovery message: %s",
+                        msg.model_dump_json(exclude_none=True),
+                    )
+                    self.mqtt.send_discovery_message(entity_type, msg)
 
-    def create_discovery_message(self, node_name: str, task_name: str, task_number: int,
-                                 value_name: str, device_type: str) -> tuple[str, DiscoveryMessage]:
+    def create_discovery_message(
+        self,
+        node_name: str,
+        task_name: str,
+        task_number: int,
+        value_name: str,
+        device_type: str,
+    ) -> tuple[str, DiscoveryMessage]:
         """Create a Home Assistant MQTT discovery message."""
         unique_id = node_name + "_" + task_name + "_" + value_name
         state_topic = node_name + "/" + task_name + "/" + value_name
         name = node_name.replace("_", " ") + " - " + task_name.replace("_", " ")
         if device_type == "Environment - DS18b20":
-            msg = DiscoveryMessage(name=name, device_class="temperature",
-                                   unique_id=unique_id, state_topic=state_topic)
+            msg = DiscoveryMessage(
+                name=name,
+                device_class="temperature",
+                unique_id=unique_id,
+                state_topic=state_topic,
+            )
             msg.unit_of_measurement = "°C"
-            return ('sensor', msg)
+            return ("sensor", msg)
         elif value_name == "State":
-            msg = DiscoveryMessage(name=name, device_class="switch",
-                                   unique_id=unique_id, state_topic=state_topic)
+            msg = DiscoveryMessage(
+                name=name,
+                device_class="switch",
+                unique_id=unique_id,
+                state_topic=state_topic,
+            )
             msg.icon = "mdi:light-switch"
             msg.unit_of_measurement = None
             msg.command_topic = node_name + "/cmd"
@@ -90,6 +120,6 @@ class NodeManager(NodeReceiver):
             msg.payload_off = "TaskValueSet," + str(task_number) + ",1,0"
             msg.state_on = "1"
             msg.state_off = "0"
-            return ('switch', msg)
+            return ("switch", msg)
         else:
             return (None, None)
