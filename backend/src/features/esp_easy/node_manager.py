@@ -13,7 +13,8 @@ from .model import NodeInfo
 
 class NodeManager(NodeReceiver):
     """This class manages the list of ESPEasy nodes."""
-
+    _log = logging.getLogger(__name__)
+    
     def __init__(self, mqtt: HomeAssistantMqtt):
         self.mqtt = mqtt
         self._esp_nodes = {}
@@ -63,12 +64,10 @@ class NodeManager(NodeReceiver):
 
     def send_node_info(self, node_info: NodeInfo):
         """Send Home Assistant MQTT discovery messages for the node sensors."""
-        log = logging.getLogger("send_node_info")
-        log.setLevel(logging.DEBUG)
         node_name = node_info.System.Unit_Name
         for sensor in node_info.Sensors:
             if sensor.TaskEnabled == "true":
-                log.debug(
+                self._log.debug(
                     " {%d} : %s - %s", sensor.TaskNumber, sensor.TaskName, sensor.Type
                 )
                 entity_type, msg = self.create_discovery_message(
@@ -79,7 +78,7 @@ class NodeManager(NodeReceiver):
                     sensor.Type,
                 )
                 if msg:
-                    log.debug(
+                    self._log.debug(
                         "Sending discovery message: %s",
                         msg.model_dump_json(exclude_none=True),
                     )
