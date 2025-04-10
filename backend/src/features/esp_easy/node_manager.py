@@ -5,9 +5,9 @@ import os
 import threading
 import requests
 
-from esp_easy.udp_receiver import NodeReceiver, UdpReceiver
-from esp_easy.home_assistant_mqtt import DiscoveryMessage, send_discovery_message
-from esp_easy.model import NodeInfo
+from .udp_receiver import NodeReceiver, UdpReceiver
+from .home_assistant_mqtt import DiscoveryMessage, send_discovery_message
+from .model import NodeInfo
 
 class NodeManager(NodeReceiver):
     """This class manages the list of ESPEasy nodes."""
