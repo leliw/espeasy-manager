@@ -1,20 +1,20 @@
-from typing import Union
+from typing import Iterable
 
 from fastapi import APIRouter
 
 from dependencies import NodeManagerDep
-from features.esp_easy import NodeHeader, NodeInfo
+from features.nodes import Node, NodeHeader
 
 router = APIRouter(tags=["ESP Easy Nodes"])
 
 
 @router.get("")
-async def read_nodes(esp_manager: NodeManagerDep) -> list[NodeHeader]:
+async def read_nodes(node_manager: NodeManagerDep) -> Iterable[NodeHeader]:
     """Returns a list of all nodes"""
-    return esp_manager.get_nodes()
+    return node_manager.get_all()
 
 
 @router.get("/{ip}")
-async def read_node(esp_manager: NodeManagerDep, ip: str) -> Union[NodeInfo, None]:
+async def read_node(node_manager: NodeManagerDep, ip: str) -> Node:
     """Returns a node by ip"""
-    return esp_manager.get_node(ip)
+    return node_manager.get(ip)

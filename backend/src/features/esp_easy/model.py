@@ -1,17 +1,10 @@
 """ESP Easy data structure based on JSON format."""
 from __future__ import annotations
 from typing import List, Optional
-import datetime
 from pydantic import BaseModel, Field
 
 # ESPEasy data structure based on JSON format
 
-class NodeHeader(BaseModel):
-    """Node header information."""
-    ip: str
-    name: str
-    unit_no: int
-    last_seen: datetime.datetime
 
 class System(BaseModel):
     """"ESP Easy node system information."""

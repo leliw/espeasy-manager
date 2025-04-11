@@ -4,12 +4,15 @@ import datetime
 import logging
 import os
 import threading
+from typing import Iterator
 
 import requests
 from ampf.base import BaseFactory, KeyNotExistsException
 
+from features.nodes import Node, NodeHeader
+
 from .home_assistant_mqtt import DiscoveryMessage, HomeAssistantMqtt
-from .model import Node, NodeInfo
+from .model import NodeInfo
 from .udp_receiver import NodeReceiver, UdpReceiver
 
 
@@ -29,7 +32,7 @@ class NodeManager(NodeReceiver):
         """Add a node to the list of nodes"""
         try:
             node = self.get(ip)
-            # node.last_seen = datetime.datetime.now()
+            node.last_seen = datetime.datetime.now()
             self.storage.save(node)
         except KeyNotExistsException:
             self._esp_nodes[ip] = {
@@ -44,15 +47,16 @@ class NodeManager(NodeReceiver):
                 node = Node(
                     ip=ip,
                     name=name,
-                    nr=unit_no,
-                    # last_seen=datetime.datetime.now(),
+                    unit_no=unit_no,
+                    last_seen=datetime.datetime.now(),
                     build=node_info.System.Build,
                     age=node_info.System.Uptime,
+                    Sensors=node_info.Sensors,
                 )
                 self.storage.save(node)
                 if unit_no in [31, 33, 61]:
                     self.send_node_info(node_info)
-            except requests.exceptions.ConnectionError as e:
+            except requests.exceptions.RequestException as e:
                 self._log.warning(e)
 
     def get_node_info(self, ip) -> NodeInfo:
@@ -60,9 +64,8 @@ class NodeManager(NodeReceiver):
         req = requests.get("http://" + ip + "/json", timeout=5)
         return NodeInfo.model_validate(req.json())
 
-    def get_all(self) -> list[NodeInfo]:
-        """Returns a list of all nodes"""
-        return [v for (_, v) in self._esp_nodes.items()]
+    def get_all(self) -> Iterator[NodeHeader]:
+        return [NodeHeader(**v.model_dump()) for v in self.storage.get_all()]
 
     def get(self, ip: str) -> Node:
         return self.storage.get(ip)
