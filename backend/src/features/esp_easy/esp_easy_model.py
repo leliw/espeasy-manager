@@ -128,3 +128,13 @@ class NodeInfo(BaseModel):
     nodes: List[Node]
     Sensors: List[Sensor]
     TTL: int
+
+
+class Controller(BaseModel):
+    """ESP Easy node controller information."""
+    controller_no: int
+    enabled: bool
+    protocol: Optional[str] = None
+    host: Optional[str] = None
+    port: Optional[int] = None
+    

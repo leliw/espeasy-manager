@@ -6,8 +6,10 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "ampf>=0.1.21",
+    "beautifulsoup4>=4.13.3",
     "fastapi>=0.115.12",
     "gunicorn>=23.0.0",
+    "httpx>=0.28.1",
     "paho-mqtt>=2.1.0",
     "pydantic-settings>=2.8.1",
     "python-dotenv>=1.1.0",
@@ -18,3 +20,8 @@ dependencies = [
 
 [[tool.uv.index]]
 url = "https://europe-west3-python.pkg.dev/development-428212/pip/simple/"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+]

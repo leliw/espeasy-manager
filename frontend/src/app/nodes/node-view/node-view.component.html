@@ -1,8 +1,26 @@
 <!-- <pre>{{node | json }}</pre> -->
+<table>
+    <caption>Controllers</caption>
+    <tr>
+        <th>No</th>
+        <th>Enabled</th>
+        <th>Protocol</th>
+        <th>Host</th>
+        <th>Port</th>
+    </tr>
+    @for(c of node.controllers; track c.controller_no) {
+    <tr>
+        <td>{{c.controller_no}}</td>
+        <td>{{c.enabled}}</td>
+        <td>{{c.protocol}}</td>
+        <td>{{c.host}}</td>
+        <td>{{c.port}}</td>
+    </tr>
+    }
+</table>
+
+
 <ul *ngIf="node">
     <li *ngFor="let s of node.sensors">{{s.TaskNumber}} - {{s.TaskName}} - {{s.TaskEnabled}} - {{s.Type}}
     </li>
 </ul>
-
-
-

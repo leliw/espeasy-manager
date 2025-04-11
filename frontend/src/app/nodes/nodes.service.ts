@@ -10,13 +10,21 @@ export interface NodeHeader {
   age: number;
   last_seen: string;
 }
+export interface Controller {
+  controller_no: number;
+  enabled: boolean;
+  protocol: string;
+  host: string;
+  port: number;
+}
 
 export interface Node {
-  System: System
-  WiFi: WiFi
-  nodes: NodeInfo[]
-  sensors: Sensor[]
-  TTL: number
+  System: System;
+  WiFi: WiFi;
+  nodes: NodeInfo[];
+  controllers: Controller[];
+  sensors: Sensor[];
+  TTL: number;
 }
 
 export interface System {

@@ -9,6 +9,7 @@ import requests
 from ampf.base import BaseFactory, KeyNotExistsException
 
 from features.esp_easy import NodeInfo, NodeReceiver, UdpReceiver
+from features.esp_easy.esp_easy_service import EspEasyService
 from features.home_assistant.home_assistant_mqtt import (
     DiscoveryMessage,
     HomeAssistantMqtt,
@@ -51,6 +52,16 @@ class NodeManager(NodeReceiver):
                     self.send_node_info(node_info)
             except requests.exceptions.RequestException as e:
                 self._log.warning(e)
+
+    async def refresh_node_information(self, ip: str) -> Node:
+        node = self.get(ip)
+        esp = EspEasyService(ip)
+        node_info = await esp.get_node_info()
+        node.last_seen = datetime.datetime.now()
+        node.sensors = node_info.Sensors
+        node.controllers = await esp.get_controllers()
+        self.storage.save(node)
+        return node
 
     def get_node_info(self, ip) -> NodeInfo:
         """Get the node info from the device."""

@@ -1,9 +1,10 @@
 import datetime
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from features.esp_easy import Sensor
+from features.esp_easy.esp_easy_model import Controller
 
 
 class NodeHeader(BaseModel):
@@ -15,4 +16,5 @@ class NodeHeader(BaseModel):
     last_seen: datetime.datetime
 
 class Node(NodeHeader):
-    sensors: List[Sensor]
+    controllers: List[Controller] = Field(default_factory=list)
+    sensors: List[Sensor] = Field(default_factory=list)
