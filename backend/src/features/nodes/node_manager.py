@@ -8,12 +8,8 @@ from typing import Iterator
 import requests
 from ampf.base import BaseFactory, KeyNotExistsException
 
-from features.esp_easy import NodeInfo, NodeReceiver, UdpReceiver
-from features.esp_easy.esp_easy_service import EspEasyService
-from features.home_assistant.home_assistant_mqtt import (
-    DiscoveryMessage,
-    HomeAssistantMqtt,
-)
+from features.esp_easy import EspEasyService, NodeInfo, NodeReceiver, UdpReceiver
+from features.home_assistant import HomeAssistantMqtt
 
 from .node_model import Node, NodeHeader
 
@@ -82,7 +78,7 @@ class NodeManager(NodeReceiver):
                 self._log.debug(
                     " {%d} : %s - %s", sensor.TaskNumber, sensor.TaskName, sensor.Type
                 )
-                entity_type, msg = self.create_discovery_message(
+                msg = self.mqtt.create_discovery_message(
                     node_name,
                     sensor.TaskName,
                     sensor.TaskNumber,
@@ -90,47 +86,4 @@ class NodeManager(NodeReceiver):
                     sensor.Type,
                 )
                 if msg:
-                    self._log.debug(
-                        "Sending discovery message: %s",
-                        msg.model_dump_json(exclude_none=True),
-                    )
-                    self.mqtt.send_discovery_message(entity_type, msg)
-
-    def create_discovery_message(
-        self,
-        node_name: str,
-        task_name: str,
-        task_number: int,
-        value_name: str,
-        device_type: str,
-    ) -> tuple[str, DiscoveryMessage]:
-        """Create a Home Assistant MQTT discovery message."""
-        unique_id = node_name + "_" + task_name + "_" + value_name
-        state_topic = node_name + "/" + task_name + "/" + value_name
-        name = node_name.replace("_", " ") + " - " + task_name.replace("_", " ")
-        if device_type == "Environment - DS18b20":
-            msg = DiscoveryMessage(
-                name=name,
-                device_class="temperature",
-                unique_id=unique_id,
-                state_topic=state_topic,
-            )
-            msg.unit_of_measurement = "°C"
-            return ("sensor", msg)
-        elif value_name == "State":
-            msg = DiscoveryMessage(
-                name=name,
-                device_class="switch",
-                unique_id=unique_id,
-                state_topic=state_topic,
-            )
-            msg.icon = "mdi:light-switch"
-            msg.unit_of_measurement = None
-            msg.command_topic = node_name + "/cmd"
-            msg.payload_on = "TaskValueSet," + str(task_number) + ",1,1"
-            msg.payload_off = "TaskValueSet," + str(task_number) + ",1,0"
-            msg.state_on = "1"
-            msg.state_off = "0"
-            return ("switch", msg)
-        else:
-            return (None, None)
+                    self.mqtt.send_discovery_message(msg)
