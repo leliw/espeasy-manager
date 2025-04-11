@@ -1,17 +1,18 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { Node, NodesService } from '../nodes.service';
 import { ActivatedRoute } from '@angular/router';
-import { CommonModule, JsonPipe } from '@angular/common';
+import { Node, NodesService } from '../nodes.service';
 
 @Component({
     selector: 'app-node-view',
     standalone: true,
-    imports: [CommonModule, JsonPipe],
+    imports: [CommonModule],
     templateUrl: './node-view.component.html',
     styleUrl: './node-view.component.css'
 })
 export class NodeViewComponent implements OnInit {
 
+    ip!: string;
     node!: Node;
 
     constructor(
@@ -21,10 +22,17 @@ export class NodeViewComponent implements OnInit {
 
     ngOnInit(): void {
         this.route.paramMap.subscribe(params => {
-            const ip = params.get('ip') ?? '';
-            this.nodeService.getNode(ip).subscribe(node => {
+            this.ip = params.get('ip') ?? '';
+            this.nodeService.getNode(this.ip).subscribe(node => {
                 this.node = node;
             });
         });
     }
+
+    refresh() {
+        this.nodeService.refreshNodeInformation(this.ip).subscribe(node => {
+            this.node = node;
+        });
+    }
 }
+

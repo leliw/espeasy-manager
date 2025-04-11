@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 
 
 export interface NodeHeader {
@@ -145,7 +146,11 @@ export class NodesService {
     return this.http.get<NodeHeader[]>('/api/nodes');
   }
 
-  getNode(ip: string) {
+  getNode(ip: string): Observable<Node> {
     return this.http.get<Node>(`/api/nodes/${ip}`);
+  }
+
+  refreshNodeInformation(ip: string): Observable<Node> {
+    return this.http.post<Node>(`/api/nodes/${ip}/refresh`, {});
   }
 }
