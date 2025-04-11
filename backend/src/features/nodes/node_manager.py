@@ -44,7 +44,7 @@ class NodeManager(NodeReceiver):
                     last_seen=datetime.datetime.now(),
                     build=node_info.System.Build,
                     age=node_info.System.Uptime,
-                    Sensors=node_info.Sensors,
+                    sensors=node_info.Sensors,
                 )
                 self.storage.save(node)
                 if unit_no in [31, 33, 61]:

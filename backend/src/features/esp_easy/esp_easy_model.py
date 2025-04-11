@@ -96,7 +96,7 @@ class TaskValue(BaseModel):
     ValueNumber: int
     Name: str
     NrDecimals: int
-    Value: float
+    Value: Optional[float] = None
 
 
 class DataAcquisitionItem(BaseModel):

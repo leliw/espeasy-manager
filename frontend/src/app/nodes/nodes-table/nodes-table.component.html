@@ -3,9 +3,17 @@
         <th>No</th>
         <th>IP</th>
         <th>Name</th>
+        <th>Build</th>
+        <th>Age</th>
+        <th>Last seen</th>
     </tr>
     <tr *ngFor="let node of nodes">
         <td>{{node.unit_no}}</td>
         <td><a href="http://{{node.ip}}/" target="_blank">{{node.ip}}</a></td>
         <td><a routerLink="/nodes/{{node.ip}}">{{node.name}}</a></td>
+        <td>{{node.build}}</td>
+        <td>{{node.age | date:'HH:mm:ss'}}</td>
+        <td>{{node.last_seen | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+    </tr>
+    
 </table>

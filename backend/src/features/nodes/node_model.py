@@ -15,4 +15,4 @@ class NodeHeader(BaseModel):
     last_seen: datetime.datetime
 
 class Node(NodeHeader):
-    Sensors: List[Sensor]
+    sensors: List[Sensor]
