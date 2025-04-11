@@ -4,18 +4,22 @@ import datetime
 import logging
 import os
 import threading
-import requests
 
-from .udp_receiver import NodeReceiver, UdpReceiver
+import requests
+from ampf.base import BaseFactory, KeyNotExistsException
+
 from .home_assistant_mqtt import DiscoveryMessage, HomeAssistantMqtt
-from .model import NodeInfo
+from .model import Node, NodeInfo
+from .udp_receiver import NodeReceiver, UdpReceiver
 
 
 class NodeManager(NodeReceiver):
     """This class manages the list of ESPEasy nodes."""
+
     _log = logging.getLogger(__name__)
-    
-    def __init__(self, mqtt: HomeAssistantMqtt):
+
+    def __init__(self, factory: BaseFactory, mqtt: HomeAssistantMqtt):
+        self.storage = factory.create_storage("nodes", Node, key_name="ip")
         self.mqtt = mqtt
         self._esp_nodes = {}
         self._esp_receiver = UdpReceiver(self)
@@ -23,36 +27,45 @@ class NodeManager(NodeReceiver):
 
     def received_node(self, ip: str, name: str, unit_no: int):
         """Add a node to the list of nodes"""
-        if ip in self._esp_nodes:
-            self._esp_nodes[ip]["last_seen"] = datetime.datetime.now()
-        else:
+        try:
+            node = self.get(ip)
+            # node.last_seen = datetime.datetime.now()
+            self.storage.save(node)
+        except KeyNotExistsException:
             self._esp_nodes[ip] = {
                 "ip": ip,
                 "name": name,
                 "unit_no": unit_no,
                 "last_seen": datetime.datetime.now(),
             }
-            node_info = self.get_node_info(ip)
-            self.save_node(node_info)
-            if unit_no in [31, 33, 61]:
-                self.send_node_info(node_info)
+            try:
+                node_info = self.get_node_info(ip)
+                self.save_node(node_info)
+                node = Node(
+                    ip=ip,
+                    name=name,
+                    nr=unit_no,
+                    # last_seen=datetime.datetime.now(),
+                    build=node_info.System.Build,
+                    age=node_info.System.Uptime,
+                )
+                self.storage.save(node)
+                if unit_no in [31, 33, 61]:
+                    self.send_node_info(node_info)
+            except requests.exceptions.ConnectionError as e:
+                self._log.warning(e)
 
     def get_node_info(self, ip) -> NodeInfo:
         """Get the node info from the device."""
         req = requests.get("http://" + ip + "/json", timeout=5)
         return NodeInfo.model_validate(req.json())
 
-    def get_nodes(self) -> list[NodeInfo]:
+    def get_all(self) -> list[NodeInfo]:
         """Returns a list of all nodes"""
         return [v for (_, v) in self._esp_nodes.items()]
 
-    def get_node(self, ip: str) -> NodeInfo:
-        """Returns a node by ip"""
-        if ip in self._esp_nodes:
-            node = self._esp_nodes[ip]
-            return self.get_node_info(node["ip"])
-        else:
-            return None
+    def get(self, ip: str) -> Node:
+        return self.storage.get(ip)
 
     def save_node(self, node_info: NodeInfo):
         """Save the node info to a file."""
