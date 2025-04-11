@@ -44,8 +44,6 @@ class NodeManager(NodeReceiver):
                     sensors=node_info.Sensors,
                 )
                 self.storage.save(node)
-                if unit_no in [31, 33, 61]:
-                    self.send_node_info(node_info)
             except requests.exceptions.RequestException as e:
                 self._log.warning(e)
 
@@ -70,10 +68,11 @@ class NodeManager(NodeReceiver):
     def get(self, ip: str) -> Node:
         return self.storage.get(ip)
 
-    def send_node_info(self, node_info: NodeInfo):
+    def send_discovery_message(self, ip: str) -> None:
         """Send Home Assistant MQTT discovery messages for the node sensors."""
-        node_name = node_info.System.Unit_Name
-        for sensor in node_info.Sensors:
+        node = self.get(ip)
+        node_name = node.name
+        for sensor in node.sensors:
             if sensor.TaskEnabled == "true":
                 self._log.debug(
                     " {%d} : %s - %s", sensor.TaskNumber, sensor.TaskName, sensor.Type

@@ -34,5 +34,9 @@ export class NodeViewComponent implements OnInit {
             this.node = node;
         });
     }
+
+    sendDiscoveryMessage() {
+        this.nodeService.sendDiscoveryMessage(this.ip).subscribe();
+    }
 }
 

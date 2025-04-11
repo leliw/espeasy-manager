@@ -153,4 +153,8 @@ export class NodesService {
   refreshNodeInformation(ip: string): Observable<Node> {
     return this.http.post<Node>(`/api/nodes/${ip}/refresh`, {});
   }
+
+  sendDiscoveryMessage(ip: string): Observable<void> {
+    return this.http.post<void>(`/api/nodes/${ip}/send-discovery-message`, {});
+  }
 }

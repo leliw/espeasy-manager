@@ -1,3 +1,5 @@
+import logging
+
 import paho.mqtt.client as mqtt
 from unidecode import unidecode
 
@@ -5,6 +7,8 @@ from .home_assistant_model import DiscoveryMessage, DiscoveryPayload
 
 
 class HomeAssistantMqtt:
+    _log = logging.getLogger(__name__)
+
     def __init__(self, host: str, port: int = 1883, keepalive: int = 60):
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.connect(host, port, keepalive)
@@ -51,6 +55,8 @@ class HomeAssistantMqtt:
                 command_topic=node_name + "/cmd",
                 payload_on="TaskValueSet," + str(task_number) + ",1,1",
                 payload_off="TaskValueSet," + str(task_number) + ",1,0",
+                # payload_on="TaskValueSet," + str(task_number) + ",1,1",
+                # payload_off="TaskValueSet," + str(task_number) + ",1,0",
                 state_on="1",
                 state_off="0",
             )

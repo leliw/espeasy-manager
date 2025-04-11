@@ -23,3 +23,7 @@ async def get(node_manager: NodeManagerDep, ip: str) -> Node:
 async def refresh_node_information(node_manager: NodeManagerDep,ip: str) -> Node:
     return await node_manager.refresh_node_information(ip)
 
+@router.post("/{ip}/send-discovery-message")
+async def send_discovery_message(node_manager: NodeManagerDep,ip: str) -> None:
+    """Send a Home Assistant MQTT discovery message for the node sensors."""
+    node_manager.send_discovery_message(ip)
