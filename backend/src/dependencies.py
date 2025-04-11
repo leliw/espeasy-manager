@@ -1,14 +1,14 @@
 from typing import Annotated
 
+from ampf.base import BaseFactory
+from ampf.local import LocalFactory
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request
 from fastapi.concurrency import asynccontextmanager
 
-from ampf.base import BaseFactory
-from ampf.local import LocalFactory
-
 from config import ServerConfig
-from features.esp_easy import NodeManager, HomeAssistantMqtt
+from features.home_assistant import HomeAssistantMqtt
+from features.nodes import NodeManager
 
 load_dotenv()
 
@@ -43,6 +43,7 @@ def get_esp_manager(app: AppDep):
 
 
 NodeManagerDep = Annotated[NodeManager, Depends(get_esp_manager)]
+
 
 def get_factory(app: FastAPI = Depends(get_app)) -> BaseFactory:
     return app.state.factory

@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from features.esp_easy.model import Sensor
+from features.esp_easy import Sensor
 
 
 class NodeHeader(BaseModel):

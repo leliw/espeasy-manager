@@ -2,18 +2,19 @@
 
 import datetime
 import logging
-import os
 import threading
 from typing import Iterator
 
 import requests
 from ampf.base import BaseFactory, KeyNotExistsException
 
-from features.nodes import Node, NodeHeader
+from features.esp_easy import NodeInfo, NodeReceiver, UdpReceiver
+from features.home_assistant.home_assistant_mqtt import (
+    DiscoveryMessage,
+    HomeAssistantMqtt,
+)
 
-from .home_assistant_mqtt import DiscoveryMessage, HomeAssistantMqtt
-from .model import NodeInfo
-from .udp_receiver import NodeReceiver, UdpReceiver
+from .node_model import Node, NodeHeader
 
 
 class NodeManager(NodeReceiver):
@@ -24,7 +25,6 @@ class NodeManager(NodeReceiver):
     def __init__(self, factory: BaseFactory, mqtt: HomeAssistantMqtt):
         self.storage = factory.create_storage("nodes", Node, key_name="ip")
         self.mqtt = mqtt
-        self._esp_nodes = {}
         self._esp_receiver = UdpReceiver(self)
         threading.Thread(target=self._esp_receiver.receive_forever, daemon=True).start()
 
@@ -35,15 +35,8 @@ class NodeManager(NodeReceiver):
             node.last_seen = datetime.datetime.now()
             self.storage.save(node)
         except KeyNotExistsException:
-            self._esp_nodes[ip] = {
-                "ip": ip,
-                "name": name,
-                "unit_no": unit_no,
-                "last_seen": datetime.datetime.now(),
-            }
             try:
                 node_info = self.get_node_info(ip)
-                self.save_node(node_info)
                 node = Node(
                     ip=ip,
                     name=name,
@@ -69,14 +62,6 @@ class NodeManager(NodeReceiver):
 
     def get(self, ip: str) -> Node:
         return self.storage.get(ip)
-
-    def save_node(self, node_info: NodeInfo):
-        """Save the node info to a file."""
-        json = node_info.model_dump_json(exclude_none=True)
-        os.makedirs("data", exist_ok=True)
-        file = "data/" + node_info.System.Unit_Name + ".json"
-        with open(file, "tw", encoding="UTF-8") as outfile:
-            outfile.write(json)
 
     def send_node_info(self, node_info: NodeInfo):
         """Send Home Assistant MQTT discovery messages for the node sensors."""
