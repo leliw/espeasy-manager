@@ -1,5 +1,5 @@
 import datetime
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -11,6 +11,7 @@ class NodeHeader(BaseModel):
     unit_no: int
     name: str
     ip: str
+    mac: Optional[str] = None
     build: int
     age: int
     last_seen: datetime.datetime

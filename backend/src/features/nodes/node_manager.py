@@ -11,6 +11,7 @@ from ampf.base import BaseFactory, KeyNotExistsException
 from features.esp_easy import EspEasyService, NodeInfo, NodeReceiver, UdpReceiver
 from features.home_assistant import HomeAssistantMqtt
 
+from .discovery_messages_factory import DiscoveryMessagesFactory
 from .node_model import Node, NodeHeader
 
 
@@ -21,6 +22,7 @@ class NodeManager(NodeReceiver):
 
     def __init__(self, factory: BaseFactory, mqtt: HomeAssistantMqtt):
         self.storage = factory.create_storage("nodes", Node, key_name="ip")
+        self.factory = DiscoveryMessagesFactory()
         self.mqtt = mqtt
         self._esp_receiver = UdpReceiver(self)
         threading.Thread(target=self._esp_receiver.receive_forever, daemon=True).start()
@@ -52,6 +54,7 @@ class NodeManager(NodeReceiver):
         esp = EspEasyService(ip)
         node_info = await esp.get_node_info()
         node.last_seen = datetime.datetime.now()
+        node.mac = node_info.WiFi.STA_MAC
         node.sensors = node_info.Sensors
         node.controllers = await esp.get_controllers()
         self.storage.save(node)
@@ -71,18 +74,11 @@ class NodeManager(NodeReceiver):
     def send_discovery_message(self, ip: str) -> None:
         """Send Home Assistant MQTT discovery messages for the node sensors."""
         node = self.get(ip)
-        node_name = node.name
         for sensor in node.sensors:
             if sensor.TaskEnabled == "true":
                 self._log.debug(
                     " {%d} : %s - %s", sensor.TaskNumber, sensor.TaskName, sensor.Type
                 )
-                msg = self.mqtt.create_discovery_message(
-                    node_name,
-                    sensor.TaskName,
-                    sensor.TaskNumber,
-                    sensor.TaskValues[0].Name,
-                    sensor.Type,
-                )
+                msg = self.factory.create_discovery_message(node, sensor)
                 if msg:
                     self.mqtt.send_discovery_message(msg)
