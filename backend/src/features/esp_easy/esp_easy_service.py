@@ -1,6 +1,4 @@
-from typing import List
-
-import httpx
+import httpx2
 
 from features.esp_easy.esp_easy_model import Controller, NodeInfo
 from features.esp_easy.html_parser import HtmlParser
@@ -14,16 +12,15 @@ class EspEasyService:
 
     async def get_node_info(self) -> NodeInfo:
         """Get the node info from the device."""
-        async with httpx.AsyncClient() as client:
+        async with httpx2.AsyncClient() as client:
             response = await client.get(f"http://{self.ip}/json")
             response.raise_for_status()
             return NodeInfo.model_validate(response.json())
-    
-    async def get_controllers(self) -> List[Controller]:
+
+    async def get_controllers(self) -> list[Controller]:
         """Get the controllers from the device."""
-        async with httpx.AsyncClient() as client:
+        async with httpx2.AsyncClient() as client:
             response = await client.get(f"http://{self.ip}/controllers")
             response.raise_for_status()
             parser = HtmlParser(response.text)
             return parser.parse_controllers()
-

@@ -3,13 +3,13 @@ name = "backend"
 version = "0.1.0"
 description = "espeasy-manager"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "ampf>=0.1.21",
     "beautifulsoup4>=4.13.3",
     "fastapi>=0.115.12",
     "gunicorn>=23.0.0",
-    "httpx>=0.28.1",
+    "httpx2>=2.16.0",
     "paho-mqtt>=2.1.0",
     "pydantic-settings>=2.8.1",
     "python-dotenv>=1.1.0",
