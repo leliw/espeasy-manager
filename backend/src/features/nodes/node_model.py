@@ -1,5 +1,4 @@
 import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -11,11 +10,11 @@ class NodeHeader(BaseModel):
     unit_no: int
     name: str
     ip: str
-    mac: Optional[str] = None
+    mac: str | None = None
     build: int
-    age: int
+    age: int | None = None
     last_seen: datetime.datetime
 
 class Node(NodeHeader):
-    controllers: List[Controller] = Field(default_factory=list)
-    sensors: List[Sensor] = Field(default_factory=list)
+    controllers: list[Controller] = Field(default_factory=list)
+    sensors: list[Sensor] = Field(default_factory=list)

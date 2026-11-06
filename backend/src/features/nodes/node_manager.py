@@ -3,7 +3,7 @@
 import datetime
 import logging
 import threading
-from typing import Iterator
+from collections.abc import Iterator
 
 import requests
 from ampf.base import BaseFactory, KeyNotExistsException
@@ -21,7 +21,7 @@ class NodeManager(NodeReceiver):
     _log = logging.getLogger(__name__)
 
     def __init__(self, factory: BaseFactory, mqtt: HomeAssistantMqtt):
-        self.storage = factory.create_storage("nodes", Node, key_name="ip")
+        self.storage = factory.create_storage("nodes", Node, key="ip")
         self.factory = DiscoveryMessagesFactory()
         self.mqtt = mqtt
         self._esp_receiver = UdpReceiver(self)
@@ -66,7 +66,8 @@ class NodeManager(NodeReceiver):
         return NodeInfo.model_validate(req.json())
 
     def get_all(self) -> Iterator[NodeHeader]:
-        return [NodeHeader(**v.model_dump()) for v in self.storage.get_all()]
+        for v in self.storage.get_all():
+            yield NodeHeader(**v.model_dump())
 
     def get(self, ip: str) -> Node:
         return self.storage.get(ip)
@@ -76,9 +77,7 @@ class NodeManager(NodeReceiver):
         node = self.get(ip)
         for sensor in node.sensors:
             if sensor.TaskEnabled == "true":
-                self._log.debug(
-                    " {%d} : %s - %s", sensor.TaskNumber, sensor.TaskName, sensor.Type
-                )
+                self._log.debug(" {%d} : %s - %s", sensor.TaskNumber, sensor.TaskName, sensor.Type)
                 msg = self.factory.create_discovery_message(node, sensor)
                 if msg:
                     self.mqtt.send_discovery_message(msg)
