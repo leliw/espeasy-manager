@@ -17,7 +17,7 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     config = ServerConfig()
     app.state.config = config
-    mqtt = HomeAssistantMqtt(config.mqtt_host, config.mqtt_port)
+    mqtt = HomeAssistantMqtt(config.mqtt_host, config.mqtt_port, config.mqtt_user, config.mqtt_pass)
     factory = LocalFactory(app.state.config.data_dir)
     app.state.factory = factory
     app.state.esp_manager = NodeManager(factory, mqtt)

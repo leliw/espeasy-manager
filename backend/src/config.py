@@ -10,6 +10,8 @@ class ServerConfig(BaseSettings):
     
     mqtt_host: str = "192.168.0.2"
     mqtt_port: int = 1883
+    mqtt_user: str | None = None
+    mqtt_pass: str | None = None
 
 
 class ClientConfig(BaseModel):
