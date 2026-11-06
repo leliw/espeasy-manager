@@ -161,3 +161,4 @@ cython_debug/
 
 backend/static/**
 backend/data/**
+frontend/proxy-dev.conf.json
