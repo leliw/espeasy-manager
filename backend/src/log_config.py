@@ -10,5 +10,5 @@ def setup_logging():
     )
     logging.getLogger().addHandler(ch)
     logging.getLogger().setLevel(logging.INFO)
-    logging.getLogger("features.esp_easy.udp_receiver").setLevel(logging.DEBUG)
+    logging.getLogger("features.esp_easy.udp_receiver").setLevel(logging.INFO)
     logging.getLogger("features.nodes.node_manager").setLevel(logging.DEBUG)
