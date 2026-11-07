@@ -12,3 +12,4 @@ def setup_logging():
     logging.getLogger().setLevel(logging.INFO)
     logging.getLogger("features.esp_easy.udp_receiver").setLevel(logging.INFO)
     logging.getLogger("features.nodes.node_manager").setLevel(logging.DEBUG)
+    logging.getLogger("features.home_assistant").setLevel(logging.INFO)
