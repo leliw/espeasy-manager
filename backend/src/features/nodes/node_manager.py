@@ -31,6 +31,8 @@ class NodeManager(NodeReceiver):
         """Add a node to the list of nodes"""
         try:
             node = self.get(ip)
+            node.name = name
+            node.unit_no = unit_no
             node.last_seen = datetime.datetime.now()
             self.storage.save(node)
         except KeyNotExistsException:
