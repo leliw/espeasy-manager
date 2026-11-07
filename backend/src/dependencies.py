@@ -18,10 +18,13 @@ async def lifespan(app: FastAPI):
     config = ServerConfig()
     app.state.config = config
     mqtt = HomeAssistantMqtt(config.mqtt_host, config.mqtt_port, config.mqtt_user, config.mqtt_pass)
-    factory = LocalFactory(app.state.config.data_dir)
-    app.state.factory = factory
-    app.state.esp_manager = NodeManager(factory, mqtt)
-    yield
+    try:
+        factory = LocalFactory(app.state.config.data_dir)
+        app.state.factory = factory
+        app.state.esp_manager = NodeManager(factory, mqtt)
+        yield
+    finally:
+        mqtt.close()
 
 
 def get_app(request: Request) -> FastAPI:
@@ -45,7 +48,7 @@ def get_esp_manager(app: AppDep):
 NodeManagerDep = Annotated[NodeManager, Depends(get_esp_manager)]
 
 
-def get_factory(app: FastAPI = Depends(get_app)) -> BaseFactory:
+def get_factory(app: AppDep) -> BaseFactory:
     return app.state.factory
 
 
