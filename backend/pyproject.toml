@@ -1,6 +1,6 @@
 [project]
 name = "backend"
-version = "0.1.0"
+dynamic = [ "version" ] # See src/version.py
 description = "espeasy-manager"
 readme = "README.md"
 requires-python = ">=3.13"
