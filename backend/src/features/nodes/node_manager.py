@@ -21,10 +21,11 @@ class NodeManager(NodeReceiver):
 
     _log = logging.getLogger(__name__)
 
-    def __init__(self, factory: BaseAsyncFactory, mqtt: HomeAssistantMqtt):
+    def __init__(self, factory: BaseAsyncFactory, mqtt: HomeAssistantMqtt, httpx_client: httpx2.AsyncClient):
+        self.mqtt = mqtt
+        self.httpx_client = httpx_client
         self.storage = factory.create_storage("nodes", Node, key="ip")
         self.factory = DiscoveryMessagesFactory()
-        self.mqtt = mqtt
         self._esp_receiver = UdpReceiver(self)
 
     # NodeManager
@@ -62,7 +63,7 @@ class NodeManager(NodeReceiver):
 
     async def refresh_node_information(self, ip: str) -> Node:
         node = await self.get(ip)
-        esp = EspEasyService(ip)
+        esp = EspEasyService(ip, self.httpx_client)
         node_info = await esp.get_node_info()
         node.last_seen = datetime.datetime.now()
         node.mac = node_info.WiFi.STA_MAC
@@ -72,10 +73,9 @@ class NodeManager(NodeReceiver):
         return node
 
     async def get_node_info(self, ip: str) -> NodeInfo:
-        async with httpx2.AsyncClient(timeout=5) as client:
-            response = await client.get(f"http://{ip}/json")
-            response.raise_for_status()
-            return NodeInfo.model_validate(response.json())
+        response = await self.httpx_client.get(f"http://{ip}/json")
+        response.raise_for_status()
+        return NodeInfo.model_validate(response.json())
 
     async def get_all(self) -> AsyncGenerator[NodeHeader]:
         async for v in self.storage.get_all():

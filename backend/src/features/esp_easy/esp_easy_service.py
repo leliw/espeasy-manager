@@ -7,20 +7,19 @@ from features.esp_easy.html_parser import HtmlParser
 class EspEasyService:
     """Service to communicate with ESPEasy devices."""
 
-    def __init__(self, ip: str):
+    def __init__(self, ip: str, httpx_client: httpx2.AsyncClient):
         self.ip = ip
+        self.httpx_client = httpx_client
 
     async def get_node_info(self) -> NodeInfo:
         """Get the node info from the device."""
-        async with httpx2.AsyncClient() as client:
-            response = await client.get(f"http://{self.ip}/json")
-            response.raise_for_status()
-            return NodeInfo.model_validate(response.json())
+        response = await self.httpx_client.get(f"http://{self.ip}/json")
+        response.raise_for_status()
+        return NodeInfo.model_validate(response.json())
 
     async def get_controllers(self) -> list[Controller]:
         """Get the controllers from the device."""
-        async with httpx2.AsyncClient() as client:
-            response = await client.get(f"http://{self.ip}/controllers")
-            response.raise_for_status()
-            parser = HtmlParser(response.text)
-            return parser.parse_controllers()
+        response = await self.httpx_client.get(f"http://{self.ip}/controllers")
+        response.raise_for_status()
+        parser = HtmlParser(response.text)
+        return parser.parse_controllers()

@@ -1,56 +1,51 @@
 from typing import Annotated
 
 from ampf.base import BaseAsyncFactory
-from ampf.local import LocalAsyncFactory
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request
 from fastapi.concurrency import asynccontextmanager
 
 from app_config import AppConfig
-from features.home_assistant import HomeAssistantMqtt
+from app_state import AppState
 from features.nodes import NodeManager
 
 load_dotenv()
 
 
 def lifespan(config: AppConfig):
+    app_state = AppState.create(config)
 
     @asynccontextmanager
     async def _lifespan(app: FastAPI):
-        app.state.config = config
-        mqtt = HomeAssistantMqtt(config.mqtt_host, config.mqtt_port, config.mqtt_user, config.mqtt_pass)
-        factory = LocalAsyncFactory(app.state.config.data_dir)
-        app.state.factory = factory
-        async with mqtt:
-            app.state.esp_manager = NodeManager(factory, mqtt)
-            async with app.state.esp_manager:
-                yield
+        app.state.app_state = app_state
+        yield
+
     return _lifespan
 
 
-def get_app(request: Request) -> FastAPI:
-    return request.app
+def get_app_state(request: Request) -> AppState:
+    return request.app.state.app_state
 
 
-AppDep = Annotated[FastAPI, Depends(get_app)]
+AppStateDep = Annotated[AppState, Depends(get_app_state)]
 
 
-def get_server_config(app: AppDep) -> AppConfig:
-    return app.state.config
+def get_config(app_state: AppStateDep) -> AppConfig:
+    return app_state.config
 
 
-AppConfigDep = Annotated[AppConfig, Depends(get_server_config)]
+AppConfigDep = Annotated[AppConfig, Depends(get_config)]
 
 
-def get_esp_manager(app: AppDep):
-    return app.state.esp_manager
+def get_esp_manager(app_state: AppStateDep):
+    return app_state.esp_manager
 
 
 NodeManagerDep = Annotated[NodeManager, Depends(get_esp_manager)]
 
 
-def get_factory(app: AppDep) -> BaseAsyncFactory:
-    return app.state.factory
+def get_factory(app_state: AppStateDep) -> BaseAsyncFactory:
+    return app_state.factory
 
 
 FactoryDep = Annotated[BaseAsyncFactory, Depends(get_factory)]
