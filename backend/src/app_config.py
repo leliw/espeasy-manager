@@ -1,8 +1,7 @@
-from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class ServerConfig(BaseSettings):
+class AppConfig(BaseSettings):
     model_config = SettingsConfigDict(env_nested_delimiter="__")
 
     version: str = "0.0.1"
@@ -12,7 +11,3 @@ class ServerConfig(BaseSettings):
     mqtt_port: int = 1883
     mqtt_user: str | None = None
     mqtt_pass: str | None = None
-
-
-class ClientConfig(BaseModel):
-    version: str

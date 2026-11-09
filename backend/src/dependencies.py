@@ -6,25 +6,28 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request
 from fastapi.concurrency import asynccontextmanager
 
-from config import ServerConfig
+from app_config import AppConfig
 from features.home_assistant import HomeAssistantMqtt
 from features.nodes import NodeManager
 
 load_dotenv()
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    config = ServerConfig()
-    app.state.config = config
-    mqtt = HomeAssistantMqtt(config.mqtt_host, config.mqtt_port, config.mqtt_user, config.mqtt_pass)
-    try:
-        factory = LocalFactory(app.state.config.data_dir)
-        app.state.factory = factory
-        app.state.esp_manager = NodeManager(factory, mqtt)
-        yield
-    finally:
-        mqtt.close()
+def lifespan(config: AppConfig):
+
+    @asynccontextmanager
+    async def _lifespan(app: FastAPI):
+        app.state.config = config
+        mqtt = HomeAssistantMqtt(config.mqtt_host, config.mqtt_port, config.mqtt_user, config.mqtt_pass)
+        try:
+            factory = LocalFactory(app.state.config.data_dir)
+            app.state.factory = factory
+            app.state.esp_manager = NodeManager(factory, mqtt)
+            yield
+        finally:
+            mqtt.close()
+
+    return _lifespan
 
 
 def get_app(request: Request) -> FastAPI:
@@ -34,11 +37,11 @@ def get_app(request: Request) -> FastAPI:
 AppDep = Annotated[FastAPI, Depends(get_app)]
 
 
-def get_server_config(app: AppDep) -> ServerConfig:
+def get_server_config(app: AppDep) -> AppConfig:
     return app.state.config
 
 
-ServerConfigDep = Annotated[ServerConfig, Depends(get_server_config)]
+AppConfigDep = Annotated[AppConfig, Depends(get_server_config)]
 
 
 def get_esp_manager(app: AppDep):
