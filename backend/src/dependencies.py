@@ -1,7 +1,7 @@
 from typing import Annotated
 
-from ampf.base import BaseFactory
-from ampf.local import LocalFactory
+from ampf.base import BaseAsyncFactory
+from ampf.local import LocalAsyncFactory
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request
 from fastapi.concurrency import asynccontextmanager
@@ -20,11 +20,13 @@ def lifespan(config: AppConfig):
         app.state.config = config
         mqtt = HomeAssistantMqtt(config.mqtt_host, config.mqtt_port, config.mqtt_user, config.mqtt_pass)
         try:
-            factory = LocalFactory(app.state.config.data_dir)
+            factory = LocalAsyncFactory(app.state.config.data_dir)
             app.state.factory = factory
             app.state.esp_manager = NodeManager(factory, mqtt)
+            await app.state.esp_manager.start()
             yield
         finally:
+            await app.state.esp_manager.stop()
             mqtt.close()
 
     return _lifespan
@@ -51,8 +53,8 @@ def get_esp_manager(app: AppDep):
 NodeManagerDep = Annotated[NodeManager, Depends(get_esp_manager)]
 
 
-def get_factory(app: AppDep) -> BaseFactory:
+def get_factory(app: AppDep) -> BaseAsyncFactory:
     return app.state.factory
 
 
-FactoryDep = Annotated[BaseFactory, Depends(get_factory)]
+FactoryDep = Annotated[BaseAsyncFactory, Depends(get_factory)]
