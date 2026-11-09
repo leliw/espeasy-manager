@@ -23,10 +23,9 @@ def lifespan(config: AppConfig):
             factory = LocalAsyncFactory(app.state.config.data_dir)
             app.state.factory = factory
             app.state.esp_manager = NodeManager(factory, mqtt)
-            await app.state.esp_manager.start()
-            yield
+            async with app.state.esp_manager:
+                yield
         finally:
-            await app.state.esp_manager.stop()
             mqtt.close()
 
     return _lifespan

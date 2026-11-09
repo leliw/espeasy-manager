@@ -4,6 +4,7 @@ import asyncio
 import datetime
 import logging
 from collections.abc import AsyncGenerator
+from typing import Self
 
 import httpx2
 from ampf.base import BaseAsyncFactory, KeyNotExistsException
@@ -27,10 +28,11 @@ class NodeManager(NodeReceiver):
         self._esp_receiver = UdpReceiver(self)
 
     # NodeManager
-    async def start(self):
+    async def __aenter__(self) -> Self:
         self._receiver_task = asyncio.create_task(self._esp_receiver.receive_forever())
+        return self
 
-    async def stop(self):
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         self._receiver_task.cancel()
         await asyncio.gather(self._receiver_task, return_exceptions=True)
 
