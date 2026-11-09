@@ -92,4 +92,4 @@ class NodeManager(NodeReceiver):
                 self._log.debug(" {%d} : %s - %s", sensor.TaskNumber, sensor.TaskName, sensor.Type)
                 msg = self.factory.create_discovery_message(node, sensor)
                 if msg:
-                    self.mqtt.send_discovery_message(msg)
+                    await self.mqtt.send_discovery_message(msg)

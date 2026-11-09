@@ -19,15 +19,12 @@ def lifespan(config: AppConfig):
     async def _lifespan(app: FastAPI):
         app.state.config = config
         mqtt = HomeAssistantMqtt(config.mqtt_host, config.mqtt_port, config.mqtt_user, config.mqtt_pass)
-        try:
-            factory = LocalAsyncFactory(app.state.config.data_dir)
-            app.state.factory = factory
+        factory = LocalAsyncFactory(app.state.config.data_dir)
+        app.state.factory = factory
+        async with mqtt:
             app.state.esp_manager = NodeManager(factory, mqtt)
             async with app.state.esp_manager:
                 yield
-        finally:
-            mqtt.close()
-
     return _lifespan
 
 
