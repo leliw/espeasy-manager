@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import httpx2
 from ampf.base import BaseAsyncFactory
+from ampf.fastapi import BaseAppState
 
 from app_config import AppConfig
 from features.home_assistant.home_assistant_mqtt import HomeAssistantMqtt
@@ -13,7 +14,7 @@ _log = logging.getLogger(__name__)
 
 
 @dataclass(kw_only=True)
-class AppState:
+class AppState(BaseAppState):
     config: AppConfig
     factory: BaseAsyncFactory
     httpx_client: httpx2.AsyncClient

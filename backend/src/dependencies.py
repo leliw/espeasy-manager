@@ -18,7 +18,8 @@ def lifespan(config: AppConfig):
     @asynccontextmanager
     async def _lifespan(app: FastAPI):
         app.state.app_state = app_state
-        yield
+        async with app_state.manage_lifecycle(app):
+            yield
 
     return _lifespan
 
